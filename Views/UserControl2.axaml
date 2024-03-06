@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+  xmlns:vm="using:WebcamSample.ViewModels"
+  xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+  xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+  mc:Ignorable="d" d:DesignWidth="400" d:DesignHeight="350"
+  x:Class="WebcamSample.Views.UserControl2">
+
+  <DockPanel Background="#202020">
+    <Panel DockPanel.Dock="Top" Background="#c0c0ba">
+      <CheckBox HorizontalAlignment="Left" Margin="6,0,0,0" Content="Камера"/>
+    </Panel>
+    
+    <Image Source="/Assets/offline.jpg"/>
+  </DockPanel>
+</UserControl>

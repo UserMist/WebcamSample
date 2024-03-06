@@ -3,6 +3,7 @@ using Avalonia.ReactiveUI;
 using System;
 using System.IO;
 using System.Reflection;
+using System.Threading;
 
 namespace WebcamSample
 {
@@ -16,7 +17,10 @@ namespace WebcamSample
             .StartWithClassicDesktopLifetime(args);
 
             Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
+
+            
         }
+
 
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()

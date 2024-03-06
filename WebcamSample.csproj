@@ -11,12 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\**">
-        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-</ItemGroup>
-  
-  <ItemGroup>
     <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleToAttribute">
       <_Parameter1>SharpDX.MediaFoundation.MediaFactory</_Parameter1>
     </AssemblyAttribute>
@@ -26,9 +20,19 @@
     <Folder Include="Models\" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
-
+  
   <ItemGroup>
-    <None Remove="Assets\img.jpg" />
+    <Content Include="Assets\**">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+</ItemGroup>
+  
+  <ItemGroup>
+    <None Remove="ViewModels\UserControl1ViewModel.csa" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Include="ViewModels\UserControl1ViewModel.csa" />
   </ItemGroup>
 
   <ItemGroup>

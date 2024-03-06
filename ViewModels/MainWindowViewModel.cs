@@ -8,23 +8,35 @@ using IBrush = Avalonia.Media.IBrush;
 using Bitmap = Avalonia.Media.Imaging.Bitmap;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using Avalonia.Threading;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 namespace WebcamSample.ViewModels
 {
     public class MainWindowViewModel : ReactiveObject
     {
+        public const int TicksPerSecond = 1;
+        private readonly DispatcherTimer _timer = new() { Interval = new TimeSpan(0, 0, 0, 0, 1000 / TicksPerSecond) };
+
 
         private bool _cam0IsEnabled = true;
-        public bool Cam0IsEnabled
+        public bool CamEnabled
         {
             get => _cam0IsEnabled; set
             {
-                this.RaiseAndSetIfChanged(ref _cam0IsEnabled, value);
-                Col = value ? Brushes.Black : Brushes.White;
+                if(value)
+                {
+                    if(feed == null) feed = new();
+                    Frame = feed.Bitmap;
+                }
+                else
+                {
+                    Frame = OfflineCamImage;
+                }
 
-                CameraFeed reader = new CameraFeed();
-                reader.Draw();
-                Frame = reader.Bitmap;
+                this.RaiseAndSetIfChanged(ref _cam0IsEnabled, value);
             }
         }
 
@@ -37,10 +49,7 @@ namespace WebcamSample.ViewModels
             }
         }
 
-        void PopulateBitmap()
-        {
-
-        }
+        CameraFeed feed;
 
         public Bitmap OfflineCamImage;
         private Bitmap _frame;
@@ -49,9 +58,32 @@ namespace WebcamSample.ViewModels
         public MainWindowViewModel() : base()
         {
             OfflineCamImage = new Bitmap("Assets/offline.jpg");
-            Frame = OfflineCamImage;
+            CamEnabled = false;
+
+            //_ = Task.Run(() => FeedUpdateLoop());
+            _timer.Tick += delegate { OnTick(); };
+            _timer.IsEnabled = true;
         }
 
-        //public string Frame { get; set; } = "/Assets/img.jpg";
+        bool hit;
+        public void OnTick()
+        {
+            hit = !hit;
+            if(hit) return;
+            if(feed != null && CamEnabled)
+                feed.Draw();
+        }
+
+        public async void FeedUpdateLoop()
+        {
+            while(true)
+            {
+                if(feed != null && CamEnabled)
+                    await Dispatcher.UIThread.InvokeAsync(() => feed.Draw());
+
+                var count = CameraFeed.SourceCount;
+                await Task.Delay(500);
+            }
+        }
     }
 }

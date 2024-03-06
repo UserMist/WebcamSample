@@ -186,18 +186,20 @@ namespace WebcamSample.ViewModels
             b = (int) (v << 32 >> 32);
         }
 
+        public static Activate[] GetSources()
+        {
+            var attributes = new MediaAttributes(1);
+            attributes.Set(CaptureDeviceAttributeKeys.SourceType.Guid, CaptureDeviceAttributeKeys.SourceTypeVideoCapture.Guid);
+            return VideoHelper.EnumDeviceSources(attributes);
+        }
+
+        public static int SourceCount => GetSources().Length;
+
         #region Source and bitmap initialization
         SourceReader createSourceReader(int sourceId, int mediaTypeId)
         {
             SourceId = sourceId;
-            Activate[] sources;
-            {
-                var attributes = new MediaAttributes(1);
-                attributes.Set(CaptureDeviceAttributeKeys.SourceType.Guid, CaptureDeviceAttributeKeys.SourceTypeVideoCapture.Guid);
-                sources = VideoHelper.EnumDeviceSources(attributes);
-            }
-
-            var source = sources[SourceId].ActivateObject<MediaSource>();
+            var source = GetSources()[SourceId].ActivateObject<MediaSource>();
 
             source.CreatePresentationDescriptor(out PresentationDescriptor presentationDescriptor);
             var presentationCount = presentationDescriptor.StreamDescriptorCount;
