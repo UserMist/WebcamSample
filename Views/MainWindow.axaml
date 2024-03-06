@@ -8,20 +8,5 @@
   x:Class="WebcamSample.Views.MainWindow"
   x:DataType="vm:MainWindowViewModel"
   Icon="/Assets/avalonia-logo.ico"
-  Title="WebcamSample">
-
-  <Design.DataContext>
-        <!-- This only sets the DataContext for the previewer in an IDE,
-             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
-    </Design.DataContext>
-<!--<Image Source="/Assets/gear.svg"/>-->
-  <!--<Grid Background="{Binding Col, Mode=OneWay}">
-    <Image Source="{Binding Frame, Mode=TwoWay}"/>
-
-    <CheckBox Background="#e0e0e0" Margin="5,0,0,0" IsChecked="{Binding CamEnabled, Mode=TwoWay}">Камера</CheckBox>
-  </Grid>-->
-  
-  <views:UserControl2/>
-  
-</Window>
+  Title="Webcam Sample"
+  Content="{Binding Camera0}"/>

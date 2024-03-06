@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <DefineConstants>DESKTOP_APP</DefineConstants>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -26,14 +26,6 @@
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
 </ItemGroup>
-  
-  <ItemGroup>
-    <None Remove="ViewModels\UserControl1ViewModel.csa" />
-  </ItemGroup>
-  
-  <ItemGroup>
-    <Compile Include="ViewModels\UserControl1ViewModel.csa" />
-  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Avalonia" Version="11.0.6" />
@@ -46,5 +38,11 @@
     <PackageReference Include="SharpDX" Version="4.2.0" />
     <PackageReference Include="SharpDX.Direct3D9" Version="4.2.0" />
     <PackageReference Include="SharpDX.MediaFoundation" Version="4.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\CameraWidgetView.axaml.cs">
+      <DependentUpon>CameraWidgetView.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

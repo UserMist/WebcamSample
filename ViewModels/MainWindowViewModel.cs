@@ -12,13 +12,24 @@ using System.Threading;
 using Avalonia.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
+using WebcamSample.Views;
 
 namespace WebcamSample.ViewModels
 {
-    public class MainWindowViewModel : ReactiveObject
+    public class MainWindowViewModel : ViewModelBase
     {
+        public CameraWidgetViewModel Camera0 { get; set; }
+
+        public MainWindowViewModel()
+        {
+            Camera0 = new();
+
+        }
+
+        /*
         public const int TicksPerSecond = 1;
         private readonly DispatcherTimer _timer = new() { Interval = new TimeSpan(0, 0, 0, 0, 1000 / TicksPerSecond) };
+
 
 
         private bool _cam0IsEnabled = true;
@@ -57,6 +68,8 @@ namespace WebcamSample.ViewModels
 
         public MainWindowViewModel() : base()
         {
+            Camera0 = new CameraWidgetViewModel();
+
             OfflineCamImage = new Bitmap("Assets/offline.jpg");
             CamEnabled = false;
 
@@ -85,5 +98,6 @@ namespace WebcamSample.ViewModels
                 await Task.Delay(500);
             }
         }
+        */
     }
 }

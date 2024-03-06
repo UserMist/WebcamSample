@@ -2,9 +2,9 @@ using Avalonia.Controls;
 
 namespace WebcamSample.Views
 {
-    public partial class UserControl2 : UserControl
+    public partial class CameraWidgetView : UserControl
     {
-        public UserControl2()
+        public CameraWidgetView()
         {
             InitializeComponent();
         }

@@ -20,12 +20,13 @@ using Avalonia.LogicalTree;
 
 namespace WebcamSample.ViewModels
 {
-    public class UserControl1ViewModel : UserControl
+    public class CameraWidgetViewModel : ViewModelBase
     {
-        private CameraFeed feed;
+        /*
+        private CameraFeed feed { get; set; }
         public bool CamEnabled { get; set; }
         public Bitmap Frame { get; set; }
-        public Bitmap OfflineCamImage;
+        public Bitmap OfflineCamImage { get; set; }
 
         protected override void OnAttachedToLogicalTree(LogicalTreeAttachmentEventArgs e)
         {
@@ -63,5 +64,6 @@ namespace WebcamSample.ViewModels
 
             Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
+        */
     }
 }

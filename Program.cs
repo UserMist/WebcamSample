@@ -15,10 +15,7 @@ namespace WebcamSample
         {
             BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
-
             Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-
-            
         }
 
 
