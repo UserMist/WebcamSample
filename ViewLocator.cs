@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
 using System;
-using WebcamSample.ViewModels;
+using WebcamSample.UI;
 
 namespace WebcamSample
 {
@@ -12,7 +12,7 @@ namespace WebcamSample
             if(data is null)
                 return null;
 
-            var name = data.GetType().FullName!.Replace("ViewModel", "View", StringComparison.Ordinal);
+            var name = data.GetType().FullName!.Replace("_VM", "_V", StringComparison.Ordinal);
             var type = Type.GetType(name);
 
             if(type != null)

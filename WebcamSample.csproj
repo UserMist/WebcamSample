@@ -4,7 +4,7 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <AvaloniaUseCompiledBindingsByDefault>false</AvaloniaUseCompiledBindingsByDefault>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <DefineConstants>DESKTOP_APP</DefineConstants>
     <AllowUnsafeBlocks>True</AllowUnsafeBlocks>
@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Models\" />
+    <Folder Include="Core\" />
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
   
@@ -41,8 +41,14 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Views\CameraWidgetView.axaml.cs">
-      <DependentUpon>CameraWidgetView.axaml</DependentUpon>
+    <Compile Update="UI\CameraMonitor_V.axaml.cs">
+      <DependentUpon>CameraMonitor_V.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="UI\CameraWidget_V.axaml.cs">
+      <DependentUpon>CameraWidget_V.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="UI\MainWindow_V.axaml.cs">
+      <DependentUpon>MainWindow_V.axaml</DependentUpon>
     </Compile>
   </ItemGroup>
 </Project>

@@ -1,8 +1,7 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using WebcamSample.ViewModels;
-using WebcamSample.Views;
+using WebcamSample.UI;
 
 namespace WebcamSample
 {
@@ -19,7 +18,7 @@ namespace WebcamSample
             {
                 desktop.MainWindow = new MainWindow
                 {
-                    DataContext = new MainWindowViewModel(),
+                    DataContext = new MainWindow_VM(),
                 };
             }
 

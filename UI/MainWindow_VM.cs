@@ -12,18 +12,21 @@ using System.Threading;
 using Avalonia.Threading;
 using System.Threading.Tasks;
 using System.Diagnostics;
-using WebcamSample.Views;
+using WebcamSample.UI.Core;
 
-namespace WebcamSample.ViewModels
+namespace WebcamSample.UI
 {
-    public class MainWindowViewModel : ViewModelBase
+    public class MainWindow_VM : ViewModelBase
     {
-        public CameraWidgetViewModel Camera0 { get; set; }
+        public CameraFeed Feed0 { get; set; }
+        public CameraWidget_VM Camera0 { get; set; }
 
-        public MainWindowViewModel()
+        public MainWindow_VM()
         {
-            Camera0 = new();
-
+            var offline = new Bitmap("Assets/offline.jpg");
+            Feed0 = new(0);
+            var monitor = new CameraMonitor_VM(Feed0, offline);
+            Camera0 = new(monitor);
         }
 
         /*
@@ -33,7 +36,7 @@ namespace WebcamSample.ViewModels
 
 
         private bool _cam0IsEnabled = true;
-        public bool CamEnabled
+        public bool FeedEnabled
         {
             get => _cam0IsEnabled; set
             {
@@ -66,16 +69,16 @@ namespace WebcamSample.ViewModels
         private Bitmap _frame;
         public Bitmap Frame { get => _frame; set => this.RaiseAndSetIfChanged(ref _frame, value); }
 
-        public MainWindowViewModel() : base()
+        public MainWindow_VM() : base()
         {
-            Camera0 = new CameraWidgetViewModel();
+            Camera0 = new CameraWidget_VM();
 
             OfflineCamImage = new Bitmap("Assets/offline.jpg");
-            CamEnabled = false;
+            FeedEnabled = false;
 
             //_ = Task.Run(() => FeedUpdateLoop());
             _timer.Tick += delegate { OnTick(); };
-            _timer.IsEnabled = true;
+            _timer.FeedEnabled = true;
         }
 
         bool hit;
@@ -83,7 +86,7 @@ namespace WebcamSample.ViewModels
         {
             hit = !hit;
             if(hit) return;
-            if(feed != null && CamEnabled)
+            if(feed != null && FeedEnabled)
                 feed.Draw();
         }
 
@@ -91,7 +94,7 @@ namespace WebcamSample.ViewModels
         {
             while(true)
             {
-                if(feed != null && CamEnabled)
+                if(feed != null && FeedEnabled)
                     await Dispatcher.UIThread.InvokeAsync(() => feed.Draw());
 
                 var count = CameraFeed.SourceCount;

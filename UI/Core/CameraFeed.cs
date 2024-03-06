@@ -8,7 +8,7 @@ using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 
-namespace WebcamSample.ViewModels
+namespace WebcamSample.UI.Core
 {
     static class VideoHelper
     {
@@ -21,14 +21,14 @@ namespace WebcamSample.ViewModels
             var gShift = _cgu * u + 0.58060f * v;
             var bShift = _cb * u;
 
-            R = (byte) Math.Clamp(Y + rShift, 0, 255);
-            G = (byte) Math.Clamp(Y + gShift, 0, 255);
-            B = (byte) Math.Clamp(Y + bShift, 0, 255);
+            R = (byte)Math.Clamp(Y + rShift, 0, 255);
+            G = (byte)Math.Clamp(Y + gShift, 0, 255);
+            B = (byte)Math.Clamp(Y + bShift, 0, 255);
         }
 
         public static string? FormatNameFrom(Guid g)
         {
-            switch(g.ToString())
+            switch (g.ToString())
             {
                 case "31564d57-0000-0010-8000-00aa00389b71": return "Wmv1";
                 case "32564d57-0000-0010-8000-00aa00389b71": return "Wmv2";
@@ -85,26 +85,26 @@ namespace WebcamSample.ViewModels
 
         [DllImport("mf.dll", CallingConvention = CallingConvention.StdCall, EntryPoint = "MFEnumDeviceSources")]
         private unsafe static extern int MFEnumDeviceSources_(void* param0, void* param1, void* param2);
-        private unsafe static void enumDeviceSources(MediaAttributes attributesRef, out IntPtr pSourceActivateOut, out int cSourceActivateRef)
+        private unsafe static void enumDeviceSources(MediaAttributes attributesRef, out nint pSourceActivateOut, out int cSourceActivateRef)
         {
-            IntPtr intPtr = CppObject.ToCallbackPtr<MediaAttributes>(attributesRef);
+            nint intPtr = CppObject.ToCallbackPtr<MediaAttributes>(attributesRef);
             Result result;
-            fixed(int* ptr = &cSourceActivateRef) fixed(IntPtr* ptr2 = &pSourceActivateOut)
+            fixed (int* ptr = &cSourceActivateRef) fixed (nint* ptr2 = &pSourceActivateOut)
             {
-                result = MFEnumDeviceSources_((void*) intPtr, ptr2, ptr);
+                result = MFEnumDeviceSources_((void*)intPtr, ptr2, ptr);
             }
             result.CheckError();
         }
 
         public static Activate[] EnumDeviceSources(MediaAttributes attributesRef)
         {
-            enumDeviceSources(attributesRef, out IntPtr devicePtr, out int devicesCount);
+            enumDeviceSources(attributesRef, out nint devicePtr, out int devicesCount);
             var result = new Activate[devicesCount];
             unsafe
             {
                 var address = (void**)devicePtr;
-                for(var i = 0; i < devicesCount; i++)
-                    result[i] = new Activate(new IntPtr(address[i]));
+                for (var i = 0; i < devicesCount; i++)
+                    result[i] = new Activate(new nint(address[i]));
             }
             return result;
         }
@@ -131,7 +131,7 @@ namespace WebcamSample.ViewModels
         static unsafe void AYUV_to_RGBA64(byte* data, int dataLength, ushort* output)
         {
             int k = 0, i = 0;
-            while(i < dataLength)
+            while (i < dataLength)
             {
                 byte V = data[i++];
                 byte U = data[i++];
@@ -139,10 +139,10 @@ namespace WebcamSample.ViewModels
                 byte A = data[i++];
 
                 VideoHelper.YUV_to_RGB(Y, U, V, out var R, out var G, out var B);
-                output[k++] = (ushort) (R << 8);
-                output[k++] = (ushort) (G << 8);
-                output[k++] = (ushort) (B << 8);
-                output[k++] = (ushort) (A << 8);
+                output[k++] = (ushort)(R << 8);
+                output[k++] = (ushort)(G << 8);
+                output[k++] = (ushort)(B << 8);
+                output[k++] = (ushort)(A << 8);
             }
         }
 
@@ -150,7 +150,7 @@ namespace WebcamSample.ViewModels
         static unsafe void YUY2_to_RGB24(byte* data, int dataLength, byte* output)
         {
             int k = 0, i = 0;
-            while(i < dataLength)
+            while (i < dataLength)
             {
                 byte Y0 = data[i++];
                 byte U = data[i++];
@@ -166,7 +166,7 @@ namespace WebcamSample.ViewModels
         static unsafe void UYVY_to_RGB24(byte* data, int dataLength, byte* output)
         {
             int k = 0, i = 0;
-            while(i < dataLength)
+            while (i < dataLength)
             {
                 byte U = data[i++];
                 byte Y0 = data[i++];
@@ -179,11 +179,11 @@ namespace WebcamSample.ViewModels
         }
         #endregion
 
-        static long packLong(in int a, in int b) => (long) a << 32 | (long) b;
+        static long packLong(in int a, in int b) => (long)a << 32 | (long)b;
         static void unpackLong(in long v, out int a, out int b)
         {
-            a = (int) (v >> 32);
-            b = (int) (v << 32 >> 32);
+            a = (int)(v >> 32);
+            b = (int)(v << 32 >> 32);
         }
 
         public static Activate[] GetSources()
@@ -203,22 +203,22 @@ namespace WebcamSample.ViewModels
 
             source.CreatePresentationDescriptor(out PresentationDescriptor presentationDescriptor);
             var presentationCount = presentationDescriptor.StreamDescriptorCount;
-            for(var i = 0; i < presentationCount; i++)
+            for (var i = 0; i < presentationCount; i++)
             {
                 presentationDescriptor.GetStreamDescriptorByIndex(i, out var isSelected, out StreamDescriptor streamDescriptor);
             }
 
             var sourceReader = new SourceReader(source);
-            using(var mt = sourceReader.GetNativeMediaType(0, mediaTypeId))
+            using (var mt = sourceReader.GetNativeMediaType(0, mediaTypeId))
             {
-                unpackLong(mt.Get(MediaTypeAttributeKeys.FrameSize), out var sourceWidth, out var sourceHeight); 
+                unpackLong(mt.Get(MediaTypeAttributeKeys.FrameSize), out var sourceWidth, out var sourceHeight);
                 unpackLong(mt.Get(MediaTypeAttributeKeys.FrameRate), out var frameRateNumerator, out var frameRateDenominator);
                 unpackLong(mt.Get(MediaTypeAttributeKeys.PixelAspectRatio), out var aspectRatioNumerator, out var aspectRatioDenominator);
                 SourceSubtype = VideoHelper.FormatNameFrom(mt.Get(MediaTypeAttributeKeys.Subtype));
                 SourceWidth = sourceWidth; SourceHeight = sourceHeight;
             }
 
-            switch(SourceSubtype)
+            switch (SourceSubtype)
             {
                 case "AYUV":
                     sourceByteDepthNum = 4;
@@ -262,29 +262,29 @@ namespace WebcamSample.ViewModels
             sourceReader = createSourceReader(sourceId, 0);
             Bitmap = createBitmap();
         }
-        
+
         public unsafe void Draw()
         {
             int readStreamIndex; SourceReaderFlags readFlags; long timestamp;
             var sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
 
-            if(sample == null)
+            if (sample == null)
                 sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
 
-            if(sample == null) return;
+            if (sample == null) return;
 
             unsafe
             {
-                using(var sourceBuffer = sample.GetBufferByIndex(sample.BufferCount - 1))
+                using (var sourceBuffer = sample.GetBufferByIndex(sample.BufferCount - 1))
                 {
                     var sourcePointer = sourceBuffer.Lock(out var maxLength, out var currentLength);
-                    using(var locked = Bitmap.Lock())
+                    using (var locked = Bitmap.Lock())
                     {
                         byte* newData = (byte*)locked.Address;
                         byte* oldData = (byte*)sourcePointer.ToPointer();
-                        switch(SourceSubtype)
+                        switch (SourceSubtype)
                         {
-                            case "AYUV": AYUV_to_RGBA64(oldData, sample.TotalLength, (ushort*) newData); break;
+                            case "AYUV": AYUV_to_RGBA64(oldData, sample.TotalLength, (ushort*)newData); break;
                             case "YUY2": YUY2_to_RGB24(oldData, sample.TotalLength, newData); break;
                             case "Uyvy": UYVY_to_RGB24(oldData, sample.TotalLength, newData); break;
                             default: throw new NotImplementedException();

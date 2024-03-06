@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 
-namespace WebcamSample.ViewModels
+namespace WebcamSample.UI
 {
     public class ViewModelBase : ReactiveObject
     {

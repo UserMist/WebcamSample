@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace WebcamSample.Views
+namespace WebcamSample.UI
 {
     public partial class MainWindow : Window
     {
