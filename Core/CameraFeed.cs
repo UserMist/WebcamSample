@@ -9,6 +9,8 @@ using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 using System.Threading;
 using System.Collections;
+using System.Text.RegularExpressions;
+using SharpDX.Direct3D9;
 
 namespace WebcamSample.Core
 {
@@ -128,59 +130,73 @@ namespace WebcamSample.Core
         private int bitmapByteDepth;
         private int sourceByteDepthNum, sourceByteDepthDenom;
 
+        public static int SourceCount => GetSources().Length;
+
         #region Source -> Bitmap copying
         //4:4:4 format
-        static unsafe void AYUV_to_RGBA64(byte* data, int dataLength, ushort* output)
+        static unsafe void AYUV_to_RGBA64(byte* input, ushort* data, int width, int height, int inputCellCount, int pixelStepX, int pixelStepY, int extraDataStride = 0)
         {
-            int k = 0, i = 0;
-            while(i < dataLength)
+            for(int pixelY = 0; pixelY < height; pixelY++)
             {
-                byte V = data[i++];
-                byte U = data[i++];
-                byte Y = data[i++];
-                byte A = data[i++];
-
-                VideoHelper.YUV_to_RGB(Y, U, V, out var R, out var G, out var B);
-                output[k++] = (ushort) (R << 8);
-                output[k++] = (ushort) (G << 8);
-                output[k++] = (ushort) (B << 8);
-                output[k++] = (ushort) (A << 8);
-            }
-        }
-
-        //4:2:2 format
-        static unsafe void YUY2_to_RGB24(byte* input, byte* data, int width, int height, int inputCellCount, int pixelStepX, int pixelStepY, int extraStride = 0)
-        {
-            for(int groupId = 0; groupId < height; groupId++)
-            {
-                for(int cellId = 0; cellId < width; cellId++)
+                for(int pixelX = 0; pixelX < width; pixelX++)
                 {
-                    int inputByteId = 2*(cellId*pixelStepX + groupId*pixelStepY * inputCellCount);
+                    int inputByteId = 4*(pixelX*pixelStepX + pixelY*pixelStepY * inputCellCount);
 
-                    bool isFirst = inputByteId % 4 == 0;
-                    byte Y = input[inputByteId];
-                    byte a = input[inputByteId+1];
-                    byte b = input[inputByteId+3];
+                    byte V = input[inputByteId];
+                    byte U = input[inputByteId+1];
+                    byte Y = input[inputByteId+2];
+                    byte A = input[inputByteId+3];
 
-                    int byteId = 3*(cellId + groupId*width) + groupId*extraStride;
-                    VideoHelper.YUV_to_RGB(Y, isFirst ? a : b, isFirst ? b : a, out data[byteId], out data[byteId+1], out data[byteId+2]);
+                    VideoHelper.YUV_to_RGB(Y, U, V, out var R, out var G, out var B);
+
+                    int byteId = 4*(pixelX + pixelY*width) + pixelY*extraDataStride;
+                    data[byteId] = (ushort) (R << 8);
+                    data[byteId+1] = (ushort) (G << 8);
+                    data[byteId+2] = (ushort) (B << 8);
+                    data[byteId+3] = (ushort) (A << 8);
                 }
             }
         }
 
         //4:2:2 format
-        static unsafe void UYVY_to_RGB24(byte* data, int dataLength, byte* output)
+        static unsafe void YUY2_to_RGB24(byte* input, byte* data, int width, int height, int inputCellCount, int pixelStepX, int pixelStepY, int extraDataStride = 0)
         {
-            int k = 0, i = 0;
-            while(i < dataLength)
+            for(int pixelY = 0; pixelY < height; pixelY++)
             {
-                byte U = data[i++];
-                byte Y0 = data[i++];
-                byte V = data[i++];
-                byte Y1 = data[i++];
+                for(int pixelX = 0; pixelX < width; pixelX++)
+                {
+                    int inputByteId = 2*(pixelX*pixelStepX + pixelY*pixelStepY * inputCellCount);
 
-                VideoHelper.YUV_to_RGB(Y0, U, V, out output[k++], out output[k++], out output[k++]);
-                VideoHelper.YUV_to_RGB(Y1, U, V, out output[k++], out output[k++], out output[k++]);
+                    bool isFirst = inputByteId % 4 == 0;
+                    byte Y = input[inputByteId];
+                    byte a = input[inputByteId+1];
+                    // omit Y //
+                    byte b = input[inputByteId+3];
+
+                    int byteId = 3*(pixelX + pixelY*width) + pixelY*extraDataStride;
+                    VideoHelper.YUV_to_RGB(Y, isFirst ? a : b, isFirst ? b : a, out data[byteId], out data[byteId + 1], out data[byteId + 2]);
+                }
+            }
+        }
+
+        //4:2:2 format
+        static unsafe void UYVY_to_RGB24(byte* input, byte* data, int width, int height, int inputCellCount, int pixelStepX, int pixelStepY, int extraDataStride = 0)
+        {
+            for(int pixelY = 0; pixelY < height; pixelY++)
+            {
+                for(int pixelX = 0; pixelX < width; pixelX++)
+                {
+                    int inputByteId = 2*(pixelX*pixelStepX + pixelY*pixelStepY * inputCellCount);
+
+                    bool isFirst = inputByteId % 4 == 0;
+                    byte a = input[inputByteId];
+                    byte Y = input[inputByteId+1];
+                    byte b = input[inputByteId+2];
+                    // omit Y //
+
+                    int byteId = 3*(pixelX + pixelY*width) + pixelY*extraDataStride;
+                    VideoHelper.YUV_to_RGB(Y, isFirst ? a : b, isFirst ? b : a, out data[byteId], out data[byteId + 1], out data[byteId + 2]);
+                }
             }
         }
         #endregion
@@ -199,10 +215,8 @@ namespace WebcamSample.Core
             return VideoHelper.EnumDeviceSources(attributes);
         }
 
-        public static int SourceCount => GetSources().Length;
-
         #region Source and bitmap initialization
-        SourceReader createSourceReader(int sourceId, int mediaTypeId)
+        SourceReader createSourceReader(int sourceId, int streamId, int mediaTypeId)
         {
             SourceId = sourceId;
             var source = GetSources()[SourceId].ActivateObject<MediaSource>();
@@ -215,7 +229,8 @@ namespace WebcamSample.Core
             }
 
             var sourceReader = new SourceReader(source);
-            using(var mt = sourceReader.GetNativeMediaType(0, mediaTypeId))
+
+            using(var mt = sourceReader.GetNativeMediaType(streamId, mediaTypeId))
             {
                 unpackLong(mt.Get(MediaTypeAttributeKeys.FrameSize), out var sourceWidth, out var sourceHeight);
                 unpackLong(mt.Get(MediaTypeAttributeKeys.FrameRate), out var frameRateNumerator, out var frameRateDenominator);
@@ -269,7 +284,7 @@ namespace WebcamSample.Core
         public CameraFeed(int sourceId, string name, PixelSize step)
         {
             Name = name;
-            sourceReader = createSourceReader(sourceId, 0);
+            sourceReader = createSourceReader(sourceId, 0, 0);
             Bitmap = createBitmap(step);
             ReaderThread = new(ReadLoop);
             ReaderThread.Start();
@@ -295,7 +310,7 @@ namespace WebcamSample.Core
                             Sample = sample;
                     }
                 }
-                
+
                 Thread.Sleep(50);
             }
         }
@@ -318,9 +333,9 @@ namespace WebcamSample.Core
                     int bitmapStepX = Downsampling.Width, bitmapStepY = Downsampling.Height;
                     switch(SourceSubtype)
                     {
-                        case "AYUV": AYUV_to_RGBA64(oldData, Sample.TotalLength, (ushort*) newData); break;
+                        case "AYUV": AYUV_to_RGBA64(oldData, (ushort*) newData, Bitmap.PixelSize.Width, Bitmap.PixelSize.Height, SourceWidth, bitmapStepX, bitmapStepY, 0); break;
                         case "YUY2": YUY2_to_RGB24(oldData, newData, Bitmap.PixelSize.Width, Bitmap.PixelSize.Height, SourceWidth, bitmapStepX, bitmapStepY, 0); break;
-                        case "Uyvy": UYVY_to_RGB24(oldData, Sample.TotalLength, newData); break;
+                        case "Uyvy": UYVY_to_RGB24(oldData, newData, Bitmap.PixelSize.Width, Bitmap.PixelSize.Height, SourceWidth, bitmapStepX, bitmapStepY, 0); break;
                         default: throw new NotImplementedException();
                     }
 
