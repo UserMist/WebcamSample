@@ -9,4 +9,4 @@
   x:DataType="vm:MainWindow_VM"
   Icon="/Assets/avalonia-logo.ico"
   Title="Webcam Sample"
-  Content="{Binding Camera0}"/>
+  Content="{Binding Widget0}"/>

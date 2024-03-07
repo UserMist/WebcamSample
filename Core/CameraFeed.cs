@@ -7,8 +7,10 @@ using SharpDX.MediaFoundation;
 using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
+using System.Threading;
+using System.Collections;
 
-namespace WebcamSample.UI.Core
+namespace WebcamSample.Core
 {
     static class VideoHelper
     {
@@ -21,14 +23,14 @@ namespace WebcamSample.UI.Core
             var gShift = _cgu * u + 0.58060f * v;
             var bShift = _cb * u;
 
-            R = (byte)Math.Clamp(Y + rShift, 0, 255);
-            G = (byte)Math.Clamp(Y + gShift, 0, 255);
-            B = (byte)Math.Clamp(Y + bShift, 0, 255);
+            R = (byte) Math.Clamp(Y + rShift, 0, 255);
+            G = (byte) Math.Clamp(Y + gShift, 0, 255);
+            B = (byte) Math.Clamp(Y + bShift, 0, 255);
         }
 
         public static string? FormatNameFrom(Guid g)
         {
-            switch (g.ToString())
+            switch(g.ToString())
             {
                 case "31564d57-0000-0010-8000-00aa00389b71": return "Wmv1";
                 case "32564d57-0000-0010-8000-00aa00389b71": return "Wmv2";
@@ -89,9 +91,9 @@ namespace WebcamSample.UI.Core
         {
             nint intPtr = CppObject.ToCallbackPtr<MediaAttributes>(attributesRef);
             Result result;
-            fixed (int* ptr = &cSourceActivateRef) fixed (nint* ptr2 = &pSourceActivateOut)
+            fixed(int* ptr = &cSourceActivateRef) fixed(nint* ptr2 = &pSourceActivateOut)
             {
-                result = MFEnumDeviceSources_((void*)intPtr, ptr2, ptr);
+                result = MFEnumDeviceSources_((void*) intPtr, ptr2, ptr);
             }
             result.CheckError();
         }
@@ -103,7 +105,7 @@ namespace WebcamSample.UI.Core
             unsafe
             {
                 var address = (void**)devicePtr;
-                for (var i = 0; i < devicesCount; i++)
+                for(var i = 0; i < devicesCount; i++)
                     result[i] = new Activate(new nint(address[i]));
             }
             return result;
@@ -112,9 +114,9 @@ namespace WebcamSample.UI.Core
 
     public class CameraFeed
     {
-        public WriteableBitmap Bitmap;
-        public int BitmapWidth;
-        public int BitmapHeight;
+        public string Name;
+        public WriteableBitmap Bitmap { get; set; }
+        public PixelSize Downsampling { get; private set; }
 
         public int SourceId { get; private set; }
         public int SourceWidth { get; private set; }
@@ -131,7 +133,7 @@ namespace WebcamSample.UI.Core
         static unsafe void AYUV_to_RGBA64(byte* data, int dataLength, ushort* output)
         {
             int k = 0, i = 0;
-            while (i < dataLength)
+            while(i < dataLength)
             {
                 byte V = data[i++];
                 byte U = data[i++];
@@ -139,26 +141,30 @@ namespace WebcamSample.UI.Core
                 byte A = data[i++];
 
                 VideoHelper.YUV_to_RGB(Y, U, V, out var R, out var G, out var B);
-                output[k++] = (ushort)(R << 8);
-                output[k++] = (ushort)(G << 8);
-                output[k++] = (ushort)(B << 8);
-                output[k++] = (ushort)(A << 8);
+                output[k++] = (ushort) (R << 8);
+                output[k++] = (ushort) (G << 8);
+                output[k++] = (ushort) (B << 8);
+                output[k++] = (ushort) (A << 8);
             }
         }
 
         //4:2:2 format
-        static unsafe void YUY2_to_RGB24(byte* data, int dataLength, byte* output)
+        static unsafe void YUY2_to_RGB24(byte* input, byte* data, int width, int height, int inputCellCount, int pixelStepX, int pixelStepY, int extraStride = 0)
         {
-            int k = 0, i = 0;
-            while (i < dataLength)
+            for(int groupId = 0; groupId < height; groupId++)
             {
-                byte Y0 = data[i++];
-                byte U = data[i++];
-                byte Y1 = data[i++];
-                byte V = data[i++];
+                for(int cellId = 0; cellId < width; cellId++)
+                {
+                    int inputByteId = 2*(cellId*pixelStepX + groupId*pixelStepY * inputCellCount);
 
-                VideoHelper.YUV_to_RGB(Y0, U, V, out output[k++], out output[k++], out output[k++]);
-                VideoHelper.YUV_to_RGB(Y1, U, V, out output[k++], out output[k++], out output[k++]);
+                    bool isFirst = inputByteId % 4 == 0;
+                    byte Y = input[inputByteId];
+                    byte a = input[inputByteId+1];
+                    byte b = input[inputByteId+3];
+
+                    int byteId = 3*(cellId + groupId*width) + groupId*extraStride;
+                    VideoHelper.YUV_to_RGB(Y, isFirst ? a : b, isFirst ? b : a, out data[byteId], out data[byteId+1], out data[byteId+2]);
+                }
             }
         }
 
@@ -166,7 +172,7 @@ namespace WebcamSample.UI.Core
         static unsafe void UYVY_to_RGB24(byte* data, int dataLength, byte* output)
         {
             int k = 0, i = 0;
-            while (i < dataLength)
+            while(i < dataLength)
             {
                 byte U = data[i++];
                 byte Y0 = data[i++];
@@ -179,11 +185,11 @@ namespace WebcamSample.UI.Core
         }
         #endregion
 
-        static long packLong(in int a, in int b) => (long)a << 32 | (long)b;
+        static long packLong(in int a, in int b) => (long) a << 32 | (long) b;
         static void unpackLong(in long v, out int a, out int b)
         {
-            a = (int)(v >> 32);
-            b = (int)(v << 32 >> 32);
+            a = (int) (v >> 32);
+            b = (int) (v << 32 >> 32);
         }
 
         public static Activate[] GetSources()
@@ -203,13 +209,13 @@ namespace WebcamSample.UI.Core
 
             source.CreatePresentationDescriptor(out PresentationDescriptor presentationDescriptor);
             var presentationCount = presentationDescriptor.StreamDescriptorCount;
-            for (var i = 0; i < presentationCount; i++)
+            for(var i = 0; i < presentationCount; i++)
             {
                 presentationDescriptor.GetStreamDescriptorByIndex(i, out var isSelected, out StreamDescriptor streamDescriptor);
             }
 
             var sourceReader = new SourceReader(source);
-            using (var mt = sourceReader.GetNativeMediaType(0, mediaTypeId))
+            using(var mt = sourceReader.GetNativeMediaType(0, mediaTypeId))
             {
                 unpackLong(mt.Get(MediaTypeAttributeKeys.FrameSize), out var sourceWidth, out var sourceHeight);
                 unpackLong(mt.Get(MediaTypeAttributeKeys.FrameRate), out var frameRateNumerator, out var frameRateDenominator);
@@ -218,7 +224,7 @@ namespace WebcamSample.UI.Core
                 SourceWidth = sourceWidth; SourceHeight = sourceHeight;
             }
 
-            switch (SourceSubtype)
+            switch(SourceSubtype)
             {
                 case "AYUV":
                     sourceByteDepthNum = 4;
@@ -247,52 +253,83 @@ namespace WebcamSample.UI.Core
             return sourceReader;
         }
 
-        public WriteableBitmap createBitmap()
+        public WriteableBitmap createBitmap(PixelSize step)
         {
             var dataStride = SourceWidth * bitmapByteDepth;
             GCHandle pinnedArray = GCHandle.Alloc(new byte[dataStride * SourceHeight], GCHandleType.Pinned);
-            var ret = new WriteableBitmap(PixelFormats.Rgb24, AlphaFormat.Opaque, pinnedArray.AddrOfPinnedObject(), new PixelSize(SourceWidth, SourceHeight), new Vector(10, 10), dataStride);
+
+            var ret = new WriteableBitmap(bitmapSubtype, AlphaFormat.Opaque, pinnedArray.AddrOfPinnedObject(), new PixelSize(SourceWidth/step.Width, SourceHeight/step.Height), new Vector(96, 96), dataStride);
             pinnedArray.Free();
+
+            Downsampling = step;
             return ret;
         }
         #endregion
 
-        public CameraFeed(int sourceId = 0)
+        public CameraFeed(int sourceId, string name, PixelSize step)
         {
+            Name = name;
             sourceReader = createSourceReader(sourceId, 0);
-            Bitmap = createBitmap();
+            Bitmap = createBitmap(step);
+            ReaderThread = new(ReadLoop);
+            ReaderThread.Start();
         }
 
-        public unsafe void Draw()
+        public Thread ReaderThread;
+        public Sample? Sample;
+        public bool IsEnabled;
+        public void ReadLoop()
         {
-            int readStreamIndex; SourceReaderFlags readFlags; long timestamp;
-            var sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
-
-            if (sample == null)
-                sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
-
-            if (sample == null) return;
-
-            unsafe
+            while(true)
             {
-                using (var sourceBuffer = sample.GetBufferByIndex(sample.BufferCount - 1))
+                if(IsEnabled && Sample == null)
                 {
-                    var sourcePointer = sourceBuffer.Lock(out var maxLength, out var currentLength);
-                    using (var locked = Bitmap.Lock())
                     {
-                        byte* newData = (byte*)locked.Address;
-                        byte* oldData = (byte*)sourcePointer.ToPointer();
-                        switch (SourceSubtype)
-                        {
-                            case "AYUV": AYUV_to_RGBA64(oldData, sample.TotalLength, (ushort*)newData); break;
-                            case "YUY2": YUY2_to_RGB24(oldData, sample.TotalLength, newData); break;
-                            case "Uyvy": UYVY_to_RGB24(oldData, sample.TotalLength, newData); break;
-                            default: throw new NotImplementedException();
-                        }
+                        int readStreamIndex; SourceReaderFlags readFlags; long timestamp;
+                        var sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
+
+                        if(sample == null)
+                            sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
+
+                        if(sample != null)
+                            Sample = sample;
                     }
+                }
+                
+                Thread.Sleep(50);
+            }
+        }
+
+        public unsafe void TryUpdateBitmap()
+        {
+            if(Sample == null) return;
+
+            lock(Sample)
+            {
+                unsafe
+                {
+                    using var locked = Bitmap.Lock();
+                    using var sourceBuffer = Sample.GetBufferByIndex(Sample.BufferCount - 1);
+                    var sourcePointer = sourceBuffer.Lock(out var maxLength, out var currentLength);
+
+                    byte* newData = (byte*)locked.Address;
+                    byte* oldData = (byte*)sourcePointer.ToPointer();
+
+                    int bitmapStepX = Downsampling.Width, bitmapStepY = Downsampling.Height;
+                    switch(SourceSubtype)
+                    {
+                        case "AYUV": AYUV_to_RGBA64(oldData, Sample.TotalLength, (ushort*) newData); break;
+                        case "YUY2": YUY2_to_RGB24(oldData, newData, Bitmap.PixelSize.Width, Bitmap.PixelSize.Height, SourceWidth, bitmapStepX, bitmapStepY, 0); break;
+                        case "Uyvy": UYVY_to_RGB24(oldData, Sample.TotalLength, newData); break;
+                        default: throw new NotImplementedException();
+                    }
+
                     sourceBuffer.Unlock();
                 }
             }
+
+            Sample.Dispose();
+            Sample = null;
         }
     }
 }

@@ -15,9 +15,15 @@ namespace WebcamSample
         {
             BuildAvaloniaApp()
             .StartWithClassicDesktopLifetime(args);
-            Directory.SetCurrentDirectory(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location));
-        }
 
+            var ass = Assembly.GetEntryAssembly();
+            if(ass != null)
+            {
+                var name = Path.GetDirectoryName(ass.Location);
+                if(name != null)
+                    Directory.SetCurrentDirectory(name);
+            }
+        }
 
         public static AppBuilder BuildAvaloniaApp()
             => AppBuilder.Configure<App>()

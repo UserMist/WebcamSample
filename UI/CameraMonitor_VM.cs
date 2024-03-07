@@ -17,37 +17,25 @@ using System.Diagnostics;
 using Avalonia.Media;
 using Avalonia.LogicalTree;
 using Avalonia.Media.Immutable;
-using WebcamSample.UI.Core;
+using WebcamSample.Core;
 
 namespace WebcamSample.UI
 {
     public class CameraMonitor_VM : UserControl
     {
-        CameraFeed feed;
-        public Bitmap OfflineCamImage { get; set; }
-        public bool FeedEnabled { get; set; }
+        public CameraFeed Feed;
 
-        public CameraMonitor_VM(CameraFeed feed, Bitmap offlineCamImage)
+        public CameraMonitor_VM(CameraFeed feed)
         {
-            this.feed = feed;
-            OfflineCamImage = offlineCamImage;
+            Feed = feed;
         }
 
         public override void Render(DrawingContext context)
         {
             base.Render(context);
 
-            var rect = new Rect(512, 0, 256, 256);
-            if (FeedEnabled)
-            {
-                feed.Draw();
-                context.DrawImage(feed.Bitmap, rect);
-            }
-            else
-            {
-                context.DrawImage(OfflineCamImage, rect);
-            }
-
+            var size = Feed.Bitmap.Size;
+            context.DrawImage(Feed.Bitmap, new(0,0, size.Width, size.Height), Bounds);
             Dispatcher.UIThread.Post(InvalidateVisual, DispatcherPriority.Background);
         }
     }

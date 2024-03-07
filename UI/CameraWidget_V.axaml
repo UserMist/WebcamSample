@@ -10,7 +10,7 @@
 
   <DockPanel Background="#202020">
     <Panel DockPanel.Dock="Top" Background="#c0c0ba">
-      <CheckBox HorizontalAlignment="Left" Margin="6,0,0,0" IsChecked="{Binding FeedEnabled}" Content="Камера"/>
+      <CheckBox HorizontalAlignment="Left" Margin="6,0,0,0" IsChecked="{Binding FeedEnabled}" Content="{Binding FeedName}"/>
     </Panel>
     <UserControl Content="{Binding Monitor}"/>
   </DockPanel>

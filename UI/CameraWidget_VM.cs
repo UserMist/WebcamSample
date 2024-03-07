@@ -17,6 +17,7 @@ using System.Diagnostics;
 using Avalonia.Media;
 using Avalonia.LogicalTree;
 using Avalonia.Media.Immutable;
+using WebcamSample.Core;
 
 namespace WebcamSample.UI
 {
@@ -24,12 +25,26 @@ namespace WebcamSample.UI
     {
         public CameraMonitor_VM Monitor { get; set; }
 
-        private bool _feedEnabled;
-        public bool FeedEnabled { get => _feedEnabled; set { Monitor.FeedEnabled = value; this.RaiseAndSetIfChanged(ref _feedEnabled, value); } }
+        public bool FeedEnabled
+        {
+            get => Monitor.Feed.IsEnabled;
+            set => this.RaiseAndSetIfChanged(ref Monitor.Feed.IsEnabled, value);
+        }
+
+        public string FeedName
+        {
+            get => Monitor.Feed.Name;
+            set => this.RaiseAndSetIfChanged(ref Monitor.Feed.Name, value);
+        }
+
+        public CameraWidget_VM(CameraFeed feed)
+        {
+            Monitor = new(feed);
+        }
 
         public CameraWidget_VM(CameraMonitor_VM monitor)
         {
-            this.Monitor = monitor;
+            Monitor = monitor;
         }
     }
 }
