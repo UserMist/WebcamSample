@@ -1,6 +1,9 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Splat;
+using System.Diagnostics;
+using System;
 using WebcamSample.UI;
 
 namespace WebcamSample
@@ -20,9 +23,20 @@ namespace WebcamSample
                 {
                     DataContext = new MainWindow_VM(),
                 };
+
+                desktop.ShutdownRequested += delegate
+                {
+                    if(desktop.MainWindow.DataContext is MainWindow_VM window) 
+                        OnShutdown(window);
+                };
             }
 
             base.OnFrameworkInitializationCompleted();
+        }
+
+        static void OnShutdown(MainWindow_VM window)
+        {
+            window.Feed0.Dispose();
         }
     }
 }

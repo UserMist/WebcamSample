@@ -1,17 +1,6 @@
 ﻿using System;
-using System.Drawing;
 using Avalonia;
-using Avalonia.Media.Imaging;
-using ReactiveUI;
-using Brushes = Avalonia.Media.Brushes;
-using IBrush = Avalonia.Media.IBrush;
-using Bitmap = Avalonia.Media.Imaging.Bitmap;
-using System.IO;
-using System.Reflection;
-using System.Threading;
 using Avalonia.Threading;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using WebcamSample.Core;
 
 namespace WebcamSample.UI
@@ -23,8 +12,8 @@ namespace WebcamSample.UI
 
         public MainWindow_VM()
         {
-            var offline = new Bitmap("Assets/offline.jpg");
-            Feed0 = new CameraFeed(0, "Камера 0", new PixelSize(4,4));
+            //var offline = new Bitmap("Assets/offline.jpg");
+            Feed0 = new CameraFeed(0, "Камера 0", new PixelSize(2,2));
             Widget0 = new CameraWidget_VM(Feed0);
 
             feedUpdater.Tick += delegate { CameraUpdate(); };

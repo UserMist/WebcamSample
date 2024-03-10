@@ -8,22 +8,20 @@ using Avalonia;
 using Avalonia.Platform;
 using Avalonia.Media.Imaging;
 using System.Threading;
-using System.Collections;
-using System.Text.RegularExpressions;
-using SharpDX.Direct3D9;
 
 namespace WebcamSample.Core
 {
     static class VideoHelper
     {
-        private const float _cr = 1.13983f, _cgu = -0.39465f, _cgv = -0.58060f, _cb = 2.03211f;
+        private const float _v_r = 1.28033f, _u_g = -0.21482f, _v_g = -0.38059f, _u_b = 2.12798f;
         public static void YUV_to_RGB(in byte Y, in byte U, in byte V, out byte R, out byte G, out byte B)
         {
+            //HDTV BT.709 standard
             var u = (sbyte)(U - 128);
             var v = (sbyte)(V - 128);
-            var rShift = _cr * v;
-            var gShift = _cgu * u + 0.58060f * v;
-            var bShift = _cb * u;
+            var rShift = _v_r * v;
+            var gShift = _u_g * u + _v_g * v;
+            var bShift = _u_b * u;
 
             R = (byte) Math.Clamp(Y + rShift, 0, 255);
             G = (byte) Math.Clamp(Y + gShift, 0, 255);
@@ -44,10 +42,10 @@ namespace WebcamSample.Core
                 case "34363248-0000-0010-8000-00aa00389b71": return "H264";
                 case "35363248-0000-0010-8000-00aa00389b71": return "H265";
                 case "43564548-0000-0010-8000-00aa00389b71": return "Hevc";
-                case "53564548 -0000-0010-8000-00aa00389b71": return "HevcEs";
+                case "53564548-0000-0010-8000-00aa00389b71": return "HevcEs";
                 case "30385056-0000-0010-8000-00aa00389b71": return "Vp80";
                 case "30395056-0000-0010-8000-00aa00389b71": return "Vp90";
-                case "3253534d -0000-0010-8000-00aa00389b71": return "MultisampledS2";
+                case "3253534d-0000-0010-8000-00aa00389b71": return "MultisampledS2";
                 case "3253344d-0000-0010-8000-00aa00389b71": return "M4S2";
                 case "31435657-0000-0010-8000-00aa00389b71": return "Wvc1";
                 case "30313050-0000-0010-8000-00aa00389b71": return "P010";
@@ -114,7 +112,7 @@ namespace WebcamSample.Core
         }
     }
 
-    public class CameraFeed
+    public class CameraFeed : IDisposable
     {
         public string Name;
         public WriteableBitmap Bitmap { get; set; }
@@ -151,9 +149,9 @@ namespace WebcamSample.Core
 
                     int byteId = 4*(pixelX + pixelY*width) + pixelY*extraDataStride;
                     data[byteId] = (ushort) (R << 8);
-                    data[byteId+1] = (ushort) (G << 8);
-                    data[byteId+2] = (ushort) (B << 8);
-                    data[byteId+3] = (ushort) (A << 8);
+                    data[byteId + 1] = (ushort) (G << 8);
+                    data[byteId + 2] = (ushort) (B << 8);
+                    data[byteId + 3] = (ushort) (A << 8);
                 }
             }
         }
@@ -299,6 +297,7 @@ namespace WebcamSample.Core
             {
                 if(IsEnabled && Sample == null)
                 {
+                    try
                     {
                         int readStreamIndex; SourceReaderFlags readFlags; long timestamp;
                         var sample = sourceReader.ReadSample(SourceReaderIndex.AnyStream, SourceReaderControlFlags.None, out readStreamIndex, out readFlags, out timestamp);
@@ -309,9 +308,19 @@ namespace WebcamSample.Core
                         if(sample != null)
                             Sample = sample;
                     }
+                    catch(Exception e)
+                    {
+                        
+                        throw new Exception("Unable to read camera data (make sure no other app is accessing the camera)");
+                    }
                 }
 
-                Thread.Sleep(50);
+                try
+                {
+                    //Ignore Thread.Interrupt exception
+                    Thread.Sleep(16);
+                }
+                catch(Exception e) { }
             }
         }
 
@@ -345,6 +354,15 @@ namespace WebcamSample.Core
 
             Sample.Dispose();
             Sample = null;
+        }
+
+        public void Dispose()
+        {
+            IsEnabled = false;
+            ReaderThread.Interrupt();
+            Sample?.Dispose();
+            Bitmap.Dispose();
+            sourceReader.Dispose();
         }
     }
 }

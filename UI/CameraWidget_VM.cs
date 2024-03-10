@@ -9,14 +9,6 @@ using Bitmap = Avalonia.Media.Imaging.Bitmap;
 using System.IO;
 using System.Reflection;
 using System.Threading;
-using Avalonia.Threading;
-using Avalonia.Controls;
-using System.Threading.Tasks;
-using System.Diagnostics;
-
-using Avalonia.Media;
-using Avalonia.LogicalTree;
-using Avalonia.Media.Immutable;
 using WebcamSample.Core;
 
 namespace WebcamSample.UI
